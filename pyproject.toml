@@ -1,0 +1,27 @@
+[project]
+name = "user-stocks-project"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "dotenv>=0.9.9",
+    "mcp[cli]>=1.18.0",
+    "numpy>=2.3.4",
+    "pandas>=2.3.3",
+    "polygon===1.2.8",
+    "polygon-api-client===1.15.4",
+]
+
+[project.scripts]
+mcp-server = "mcpserver.__main__:main"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
