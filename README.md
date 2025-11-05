@@ -93,14 +93,6 @@ STOCK_TRADES_CSV_FILE_PATH = "/path/to/your/stock_trades.csv"
 ```
 
 **Required CSV Format**:
-```csv
-ticker name,ticker  symbol,action,date,stock_amount, price_per_stock_at_transection_time
-APPLE INC,AAPL,BUY,21/10/2025,100,150.25
-APPLE INC,AAPL,SELL,22/10/2025,50,155.30
-MICROSOFT CORP,MSFT,BUY,15/10/2025,75,420.50
-```
-
-**Column Descriptions**:
 - `ticker name`: Full company name
 - `ticker symbol`: Stock ticker symbol (e.g., AAPL, MSFT)
 - `action`: Either "BUY" or "SELL"
