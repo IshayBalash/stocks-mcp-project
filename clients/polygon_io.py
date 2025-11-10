@@ -5,6 +5,8 @@ from collections import deque
 from datetime import datetime, timedelta
 import time
 
+#### something something like rate limiting can be implemented here ###
+
 
 class PolygonIo:
     """Client for interacting with Polygon.io API for stock data."""
