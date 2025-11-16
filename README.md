@@ -61,11 +61,14 @@ user_stocks_project/
 
 
 
+
 - Python 3.11 or higher
 - A valid Polygon.io API key
 - Stock trading history in the required CSV format
 
 ### Dependencies
+
+--something
 
 The project uses the following main dependencies:
 - `mcp[cli]>=1.18.0` - Model Context Protocol framework
