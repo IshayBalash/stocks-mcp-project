@@ -2,6 +2,9 @@
 
 A comprehensive stock portfolio analysis tool built with Python that provides MCP (Model Context Protocol) server capabilities for stock data retrieval and portfolio analysis using the Polygon.io API. 
 
+
+
+
 ## Overview
 
 This project offers a powerful MCP server that enables:
@@ -54,6 +57,9 @@ user_stocks_project/
 ## Requirements
 
 ### Prerequisites
+
+
+
 
 - Python 3.11 or higher
 - A valid Polygon.io API key
