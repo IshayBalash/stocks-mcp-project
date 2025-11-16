@@ -1,6 +1,6 @@
 # User Stocks Project
 
-A comprehensive stock portfolio analysis tool built with Python that provides MCP (Model Context Protocol) server capabilities for stock data retrieval and portfolio analysis using the Polygon.io API.
+A comprehensive stock portfolio analysis tool built with Python that provides MCP (Model Context Protocol) server capabilities for stock data retrieval and portfolio analysis using the Polygon.io API. 
 
 ## Overview
 
