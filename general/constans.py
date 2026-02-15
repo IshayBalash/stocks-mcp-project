@@ -1,1 +1,1 @@
-STOCK_TRADES_CSV_FILE_PATH = "/Users/ishaybalash/Desktop/user_stocks_project/my_stock_trades.csv"
+STOCK_TRADES_CSV_FILE_PATH = "/Users/ishaybalash/Desktop/user_stocks_project/fake_stock_trades.csv"
