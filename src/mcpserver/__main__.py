@@ -4,8 +4,7 @@ from server import mcp
 
 
 def main():
-     mcp.run(transport="streamable-http")
-
+     mcp.run(transport="sse")
 
 
 

@@ -8,7 +8,7 @@ from mcp.server.fastmcp import FastMCP
 # Add project root to Python path to find the clients module
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 from clients.polygon_io import PolygonIo
-from general.utils.argument_clases.stocls_clases import StockBase,StockInfoByDate
+from general.utils.argument_clases.stocks_clases import StockBase,StockInfoByDate
 from general.constans import STOCK_TRADES_CSV_FILE_PATH
 
 
