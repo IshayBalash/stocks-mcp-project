@@ -1,4 +1,4 @@
-from server import mcp
+from mcpserver.server import mcp
 
 
 

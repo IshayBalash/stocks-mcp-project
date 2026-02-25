@@ -24,7 +24,7 @@ logging.basicConfig(
 
 load_dotenv()
 polygon_client = PolygonIo(os.getenv("POLYGON_API_KEY"))
-mcp = FastMCP("Stock Get Info")
+mcp = FastMCP("Stock Get Info", port=8001)
 
 # ============================================================
 # 🧩 Tool 1 — Get stock data for a specific date range

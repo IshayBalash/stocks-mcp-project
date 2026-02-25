@@ -11,6 +11,10 @@ dependencies = [
     "pandas>=2.3.3",
     "polygon===1.2.8",
     "polygon-api-client===1.15.4",
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
+    "python-multipart>=0.0.9",
+    "openai>=1.50.0",
 ]
 
 [project.scripts]
