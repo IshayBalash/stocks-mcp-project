@@ -1,8 +1,8 @@
-from server import mcp
+from server import mcp # type: ignore
 
 
 
-
+   
 def main():
      mcp.run(transport="sse")
 

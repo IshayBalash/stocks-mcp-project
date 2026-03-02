@@ -8,9 +8,11 @@ dependencies = [
     "dotenv>=0.9.9",
     "mcp[cli]>=1.18.0",
     "numpy>=2.3.4",
+    "openai>=1.0.0",
     "pandas>=2.3.3",
     "polygon===1.2.8",
     "polygon-api-client===1.15.4",
+    "streamlit>=1.40.0",
 ]
 
 [project.scripts]
