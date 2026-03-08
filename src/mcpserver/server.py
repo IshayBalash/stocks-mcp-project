@@ -1,5 +1,6 @@
 import os
 import sys
+from anyio import Path
 from dotenv import load_dotenv
 from typing import List
 import logging
@@ -21,6 +22,12 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S'
 )
+
+
+def load_prompt(name: str) -> str:
+    return (Path(__file__).parent / "promts" / f"{name}.md").read_text()
+
+
 
 load_dotenv()
 polygon_client = PolygonIo(os.getenv("POLYGON_API_KEY"))
@@ -98,32 +105,40 @@ def get_last_closing_stock_price(stock: StockBase) -> List[float]:
 # ============================================================
 # 🧩 Tool 4 — Generate best user stock exgae promtes
 # ============================================================
+# @mcp.prompt()
+# def generate_portfolio_analysis_prompt () -> str:
+#     """
+#     Return a formatted prompt for summarizing the user's stock portfolio.
+#     """
+#     return """
+# You are a professional financial analysis assistant.
+
+# The user will provide a CSV file representing their recent portfolio actions.
+# Each row in the CSV contains:
+# ticker, date, action, stock_amount, closing_day_stock_price
+
+# Your goal:
+# 1. Analyze the user's overall performance and trading behavior.
+# 2. Summarize each ticker separately:
+#    - Total buys vs. sells
+#    - Average buy/sell prices
+#    - Estimated profit or loss
+#    - Current holding status (if any shares remain)
+# 3. Identify which stock performed best and worst.
+# 4. End with a short natural-language summary of the user’s trading strategy or risk level.
+
+# Format the response as:
+# - A short paragraph summary per ticker.
+# - A final paragraph summarizing the portfolio as a whole.
+# """
+
+
+
+
 @mcp.prompt()
-def generate_portfolio_analysis_prompt () -> str:
-    """
-    Return a formatted prompt for summarizing the user's stock portfolio.
-    """
-    return """
-You are a professional financial analysis assistant.
-
-The user will provide a CSV file representing their recent portfolio actions.
-Each row in the CSV contains:
-ticker, date, action, stock_amount, closing_day_stock_price
-
-Your goal:
-1. Analyze the user's overall performance and trading behavior.
-2. Summarize each ticker separately:
-   - Total buys vs. sells
-   - Average buy/sell prices
-   - Estimated profit or loss
-   - Current holding status (if any shares remain)
-3. Identify which stock performed best and worst.
-4. End with a short natural-language summary of the user’s trading strategy or risk level.
-
-Format the response as:
-- A short paragraph summary per ticker.
-- A final paragraph summarizing the portfolio as a whole.
-"""
+def portfolio_activity_summary() -> str:
+    """Guides the model to analyze and summarize the user's portfolio performance"""
+    return load_prompt("portfolio_activity_summary")
 
 
 
@@ -148,6 +163,8 @@ def get_user_genral_view_on_portfolio() -> str:
     full_prompt = f"{prompt_template}\n\nHere is the user's portfolio data:\n{portfolio_csv}"
     
     return full_prompt
+
+
 
 
 
