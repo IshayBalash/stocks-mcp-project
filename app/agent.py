@@ -20,8 +20,8 @@ model = ChatOpenAI(
     model=os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini"),
     temperature=0.5,
     base_url="https://openrouter.ai/api/v1",
-   
     api_key=os.getenv("OPENROUTER_API_KEY"),
+    extra_body={"provider": {"ignore": ["Venice"]}},
 )
 MCP_SERVER_URL = os.getenv("MCP_SERVER_URL", "http://localhost:8001/sse")
 MCP_PROMTES=[
@@ -42,36 +42,21 @@ def make_prompt_tool(client, name: str, description: str):
 
 
 
-async def create_langchain_agent():
+async def run_agent():
     client = MultiServerMCPClient({
         "stocks": {"url": MCP_SERVER_URL, "transport": "sse"}
-        })
+    })
     tools = await client.get_tools()
-    tools += [make_prompt_tool(client,p['name'],p['description']) for p in MCP_PROMTES]
-    
-        
+    tools += [make_prompt_tool(client, p['name'], p['description']) for p in MCP_PROMTES]
+
     agent = create_agent(
         model=model,
         tools=tools,
         system_prompt="You are a stock assistant. Always use tools to get real data.",
     )
-    return agent
-
-
-async def run_agent():
-
-    
-    ## connect to the MCP AND extract tools and promotes
-    # client = MultiServerMCPClient({
-    #     "stocks": {"url": MCP_SERVER_URL, "transport": "sse"}
-    # })
-    # tools = await client.get_tools()
-    # tools += [make_prompt_tool(client,p['name'],p['description']) for p in MCP_PROMTES]
-
-    agent=await create_langchain_agent()
 
     result = await agent.ainvoke({
-        "messages": [HumanMessage("summerise my portfolio please?")]
+        "messages": [HumanMessage("summarize my portfolio performance")]
     })
 
 

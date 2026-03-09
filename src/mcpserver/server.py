@@ -105,32 +105,32 @@ def get_last_closing_stock_price(stock: StockBase) -> List[float]:
 # ============================================================
 # 🧩 Tool 4 — Generate best user stock exgae promtes
 # ============================================================
-# @mcp.prompt()
-# def generate_portfolio_analysis_prompt () -> str:
-#     """
-#     Return a formatted prompt for summarizing the user's stock portfolio.
-#     """
-#     return """
-# You are a professional financial analysis assistant.
+@mcp.prompt()
+def generate_portfolio_analysis_prompt () -> str:
+    """
+    Return a formatted prompt for summarizing the user's stock portfolio.
+    """
+    return """
+You are a professional financial analysis assistant.
 
-# The user will provide a CSV file representing their recent portfolio actions.
-# Each row in the CSV contains:
-# ticker, date, action, stock_amount, closing_day_stock_price
+The user will provide a CSV file representing their recent portfolio actions.
+Each row in the CSV contains:
+ticker, date, action, stock_amount, closing_day_stock_price
 
-# Your goal:
-# 1. Analyze the user's overall performance and trading behavior.
-# 2. Summarize each ticker separately:
-#    - Total buys vs. sells
-#    - Average buy/sell prices
-#    - Estimated profit or loss
-#    - Current holding status (if any shares remain)
-# 3. Identify which stock performed best and worst.
-# 4. End with a short natural-language summary of the user’s trading strategy or risk level.
+Your goal:
+1. Analyze the user's overall performance and trading behavior.
+2. Summarize each ticker separately:
+   - Total buys vs. sells
+   - Average buy/sell prices
+   - Estimated profit or loss
+   - Current holding status (if any shares remain)
+3. Identify which stock performed best and worst.
+4. End with a short natural-language summary of the user’s trading strategy or risk level.
 
-# Format the response as:
-# - A short paragraph summary per ticker.
-# - A final paragraph summarizing the portfolio as a whole.
-# """
+Format the response as:
+- A short paragraph summary per ticker.
+- A final paragraph summarizing the portfolio as a whole.
+"""
 
 
 
