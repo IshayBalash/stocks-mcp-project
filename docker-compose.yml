@@ -1,0 +1,24 @@
+services:
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes   # persist to disk (survives restart)
+
+  postgres:
+    image: pgvector/pgvector:pg17            # PostgreSQL 17 + pgvector extension
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data   # data survives restarts
+
+volumes:
+  redis_data:
+  postgres_data:

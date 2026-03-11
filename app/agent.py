@@ -5,14 +5,16 @@ from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from langchain.agents import create_agent
 from langchain_mcp_adapters.client import MultiServerMCPClient
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, AIMessage
+
+from app.db_manager import db
 
 load_dotenv()
 
 model = ChatOpenAI(
     model=os.getenv("OPENROUTER_MODEL", "openai/gpt-4o-mini"),
     temperature=0.5,
-    base_url="https://openrouter.ai/api/v1",
+    base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
     api_key=os.getenv("OPENROUTER_API_KEY"),
     extra_body={"provider": {"ignore": ["Venice"]}},
 )
@@ -23,8 +25,7 @@ MCP_PROMTES=[
         "description": (
             "Use ONLY when the user explicitly asks for a full portfolio summary, "
             "performance report, or deep analysis of their trading history. "
-            "Do NOT use for simple data lookups like listing holdings, "
-            "fetching stock prices, or reading transactions."
+            "Do NOT use for simple data lookups like listing holdings, or getting latest price. "
         )
     },
 ]
@@ -42,6 +43,8 @@ def make_prompt_tool(client, name: str, description: str):
 
 async def init_agent():
     """Initialize MCP client, load tools, build agent. Call once at startup."""
+    db.init_db()  # ensure Postgres table exists
+
     client = MultiServerMCPClient({
         "stocks": {"url": MCP_SERVER_URL, "transport": "sse"}
     })
@@ -64,25 +67,37 @@ async def init_agent():
     return agent
 
 
-async def astream_response(agent, messages: list):
+async def astream_response(agent, user_id: str, conversation_id: str, prompt: str):
     """
-    Stream agent events. Yields (event_type, data) tuples:
+    Load history for (user_id, conversation_id), stream agent events, then save the turn.
+
+    Yields (event_type, data) tuples:
       ("tool_start", tool_name)
       ("tool_end",   tool_name)
       ("token",      chunk_str)
     """
+    messages = db.load_history(user_id, conversation_id)
+    messages.append(HumanMessage(prompt))
+
+    response_text = ""
+
     async for event in agent.astream_events({"messages": messages}, version="v2"):
         kind = event["event"]
         if kind == "on_tool_start":
-            print(f"[TOOL CALL] → {event['name']}")
+            params = {k: v for k, v in event.get("data", {}).get("input", {}).items() if k != "runtime"}
+            params_str = f" {params}" if params else ""
+            print(f"[TOOL CALL] → {event['name']}{params_str}")
             yield "tool_start", event["name"]
         elif kind == "on_tool_end":
-            print(f"[TOOL DONE] ← {event['name']})") 
+            print(f"[TOOL DONE] ← {event['name']}")
             yield "tool_end", event["name"]
         elif kind == "on_chat_model_stream":
             chunk = event["data"]["chunk"].content
             if chunk:
+                response_text += chunk
                 yield "token", chunk
+
+    db.save_turn(user_id, conversation_id, prompt, response_text)
 
 
 # ── Dev runner ────────────────────────────────────────────────────────────────
