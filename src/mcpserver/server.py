@@ -1,5 +1,6 @@
 import os
 import sys
+from anyio import Path
 from dotenv import load_dotenv
 from typing import List
 import logging
@@ -21,6 +22,12 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S'
 )
+
+
+def load_prompt(name: str) -> str:
+    return (Path(__file__).parent / "promts" / f"{name}.md").read_text()
+
+
 
 load_dotenv()
 polygon_client = PolygonIo(os.getenv("POLYGON_API_KEY"))
@@ -127,6 +134,14 @@ Format the response as:
 
 
 
+
+@mcp.prompt()
+def portfolio_activity_summary() -> str:
+    """Guides the model to analyze and summarize the user's portfolio performance"""
+    return load_prompt("portfolio_activity_summary")
+
+
+
 # ============================================================
 # 🧩 Tool 5 — Combine prompt + user data for LLM call
 # ============================================================
@@ -148,6 +163,8 @@ def get_user_genral_view_on_portfolio() -> str:
     full_prompt = f"{prompt_template}\n\nHere is the user's portfolio data:\n{portfolio_csv}"
     
     return full_prompt
+
+
 
 
 
