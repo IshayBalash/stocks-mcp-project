@@ -1,5 +1,5 @@
 """
-RedisManager — handles all Redis operations for chat history.
+ConversationCache — handles all Redis operations for chat history.
 
 Each conversation is stored as one Redis key:
   Key:   chat_history:{user_id}:{conversation_id}
@@ -23,7 +23,7 @@ MAX_MESSAGES = 20
 REDIS_TTL = 60 * 60 * 24  # 24 h
 
 
-class RedisManager:
+class ConversationCache:
 
     def __init__(self):
         self._client: Optional[redis.Redis] = None

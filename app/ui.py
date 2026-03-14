@@ -8,7 +8,7 @@ import uuid
 import streamlit as st
 
 from app.agent import init_agent, astream_response
-from app.db_manager import db
+from app.conversation_manager import db
 
 USER_ID = "user_1"  # hardcoded for now; will come from auth later
 

@@ -1,5 +1,5 @@
 """
-DBManager — combines RedisManager and PostgresManager into one interface.
+ConversationManager — combines ConversationCache and ConversationStore into one interface.
 
 This is the only class the rest of the app should import and use.
 It handles the two-layer cache logic:
@@ -10,15 +10,15 @@ It handles the two-layer cache logic:
 
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 
-from app.redis_manager import RedisManager
-from app.postgres_manager import PostgresManager
+from app.conversation_cache import ConversationCache
+from app.conversation_store import ConversationStore
 
 
-class DBManager:
+class ConversationManager:
 
     def __init__(self):
-        self.redis = RedisManager()
-        self.postgres = PostgresManager()
+        self.redis = ConversationCache()
+        self.postgres = ConversationStore()
 
     # ── Init ──────────────────────────────────────────────────────────────────
 
@@ -87,4 +87,4 @@ class DBManager:
 # ── Singleton ─────────────────────────────────────────────────────────────────
 # Import this instance everywhere — don't instantiate DBManager directly.
 
-db = DBManager()
+db = ConversationManager()

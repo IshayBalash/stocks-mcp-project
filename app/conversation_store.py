@@ -1,5 +1,5 @@
 """
-PostgresManager — handles all PostgreSQL operations for chat history.
+ConversationStore — handles all PostgreSQL operations for chat history.
 
 Table schema:
   chat_history(
@@ -20,7 +20,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-class PostgresManager:
+class ConversationStore:
 
     def __init__(self):
         self._url = os.getenv("POSTGRES_URL")

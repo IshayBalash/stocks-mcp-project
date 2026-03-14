@@ -1,59 +1,62 @@
 ---
 name: Summary of portfolio activity
-description: Fetch current stock prices, daily changes, and key metrics for a portfolio of stocks In NYSE market.  Use this skill whenever the user asks about stock prices, portfolio per
+description: Fetch current stock prices, weekly performance, and key metrics for a portfolio of stocks. Use this skill whenever the user asks about stock prices, portfolio performance, or activity summary.
 ---
 
-# Stock Price Fetcher
+# Portfolio Activity Summary
 
-Fetches current stock price data for the user's portfolio
+Produces a full summary of the user's portfolio: current prices, weekly trend, and key insights.
 
-## How to Fetch portfolio 
-Use the MCP tool you have:read_user_exchanges_data to get the user last recorded stocks portfolio.
+## Step 1 — Load portfolio
 
-## How to Fetch Prices
+Use the tool `read_user_exchanges_data` to get the user's holdings (list of stock symbols).
 
-Use the MCP tool you have: **get_stock_value** to fetch current stock prices. 
+## Step 2 — Fetch data per stock
 
+For each stock symbol, make TWO tool calls:
 
-### Step 2: Extract key data per stock
+1. **`get_last_closing_stock_price`** — get the latest closing price
+2. **`get_stock_value`** — get daily data for the past 7 days (from_date = today minus 7 days, to_date = today)
 
-For each stock, extract:
-- **Current price** (in local currency: USD for US, ILS/ILA for TLV) if available
-- **Daily change** (absolute and %) if available
-- **Previous close** if available
-- **Day range** (high/low) if available
-- **Volume** if available
+Use today's actual date for all date calculations.
 
-### Step 3: Present results
+## Step 3 — Compute per-stock metrics
 
-Format the output as a clean summary:
+From the weekly data, calculate:
+- **Last close price** (from `get_last_closing_stock_price`)
+- **Weekly change %** = (last close - price 7 days ago) / price 7 days ago × 100
+- **Weekly high / low**
+- **Average daily volume** over the week
+- **Trend**: UP if price is higher than 7 days ago, DOWN if lower, FLAT if within ±0.5%
 
-**Example output format:**
+## Step 4 — Present results
+
+Format the output as a markdown table so it renders cleanly:
+
+**Example:**
 
 ```
-📊 Portfolio Snapshot — [Date, Time]
+📊 Portfolio Summary — [Today's Date]
 
-🇺🇸 US MARKET
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Stock            Price      Change     Volume
-GOOG             $300.10    -0.27%     12.3M
-TEVA             $18.45     +1.23%     8.1M
-...
+| Stock | Last Price | Weekly Change | Weekly High | Weekly Low | Trend |
+|-------|-----------|---------------|-------------|------------|-------|
+| AAPL  | $211.45   | +3.2%         | $214.00     | $205.10    | ⬆ UP  |
+| NVDA  | $134.83   | -0.5%         | $138.20     | $131.00    | ⬇ DOWN|
+| MSFT  | $453.13   | +0.0%         | $455.00     | $448.50    | ➡ FLAT|
 
-🇮🇱 TEL AVIV (TLV)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Stock            Price      Change     Volume
-POLI.TA          ₪7,578     +0.57%     2.1M
-AZRG.TA          ₪32,450    -0.12%     150K
-...
+🔥 Big Movers (weekly change > 3%):
+  ⬆ AAPL +3.2%
 
-🔥 BIG MOVERS (>3% change):
-  ⬆️ JNUG +5.2%
-  ⬇️ NXSN.TA -3.8%
+📉 Biggest Losers:
+  ⬇ NVDA -0.5%
 
-and so on...
+💡 Key Metrics:
+  • Best performer this week: [symbol] ([change]%)
+  • Worst performer this week: [symbol] ([change]%)
 ```
 
-- US market hours: Mon-Fri, 09:30-16:00 ET.
-- If fetching outside market hours, you'll get the last closing price.
-- Always note the timestamp of the data so the user knows how fresh it is.
+## Rules
+- Always use today's actual date — do not guess or use a hardcoded date.
+- Use `get_last_closing_stock_price` for the current price, NOT `get_stock_value` with a single date.
+- If weekly data is unavailable for a stock (e.g. newly listed), note it and skip the weekly columns.
+- All prices in USD for US stocks.

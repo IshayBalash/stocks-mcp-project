@@ -19,6 +19,8 @@ dependencies = [
     "langchain-community>=0.3.0",
     "redis>=5.0.0",
     "psycopg2-binary>=2.9.0",
+    "sentence-transformers>=3.0.0",
+    "pgvector>=0.3.0",
 ]
 
 [project.scripts]

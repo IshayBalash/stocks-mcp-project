@@ -3,11 +3,12 @@ import asyncio
 from dotenv import load_dotenv
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
+from datetime import date
 from langchain.agents import create_agent
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain_core.messages import HumanMessage, AIMessage
 
-from app.db_manager import db
+from app.conversation_manager import db
 
 load_dotenv()
 
@@ -62,7 +63,7 @@ async def init_agent():
     agent = create_agent(
         model=model,
         tools=tools,
-        system_prompt="You are a stock assistant. Always use tools to get real data.",
+        system_prompt=f"You are a stock assistant. Today's date is {date.today()}. Always use tools to get real data.",
     )
     return agent
 
@@ -81,7 +82,7 @@ async def astream_response(agent, user_id: str, conversation_id: str, prompt: st
 
     response_text = ""
 
-    async for event in agent.astream_events({"messages": messages}, version="v2"):
+    async for event in agent.astream_events({"messages": messages}, version="v2", config={"recursion_limit": 50}):
         kind = event["event"]
         if kind == "on_tool_start":
             params = {k: v for k, v in event.get("data", {}).get("input", {}).items() if k != "runtime"}

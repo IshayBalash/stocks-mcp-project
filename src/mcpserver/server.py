@@ -50,7 +50,7 @@ def get_stock_value(stock: StockInfoByDate) -> List[dict]:
     Returns:
         List[dict]: A list of dictionaries representing the stock's daily information.
     """
-    logging.info("TOOL 'GET_STOCK_VALUE' IS NOW IN USE")
+    logging.info(f"TOOL 'GET_STOCK_VALUE' IS NOW IN USE with parameters: {stock.symbol} {stock.from_date} {stock.to_date}")
     res = polygon_client.get_stock_daily_data(
         symbol=stock.symbol,
         from_date=stock.from_date,
@@ -102,35 +102,35 @@ def get_last_closing_stock_price(stock: StockBase) -> List[float]:
     return res
 
 
-# ============================================================
-# 🧩 Tool 4 — Generate best user stock exgae promtes
-# ============================================================
-@mcp.prompt()
-def generate_portfolio_analysis_prompt () -> str:
-    """
-    Return a formatted prompt for summarizing the user's stock portfolio.
-    """
-    return """
-You are a professional financial analysis assistant.
+# # ============================================================
+# # 🧩 Tool 4 — Generate best user stock exgae promtes
+# # ============================================================
+# @mcp.prompt()
+# def generate_portfolio_analysis_prompt () -> str:
+#     """
+#     Return a formatted prompt for summarizing the user's stock portfolio.
+#     """
+#     return """
+# You are a professional financial analysis assistant.
 
-The user will provide a CSV file representing their recent portfolio actions.
-Each row in the CSV contains:
-ticker, date, action, stock_amount, closing_day_stock_price
+# The user will provide a CSV file representing their recent portfolio actions.
+# Each row in the CSV contains:
+# ticker, date, action, stock_amount, closing_day_stock_price
 
-Your goal:
-1. Analyze the user's overall performance and trading behavior.
-2. Summarize each ticker separately:
-   - Total buys vs. sells
-   - Average buy/sell prices
-   - Estimated profit or loss
-   - Current holding status (if any shares remain)
-3. Identify which stock performed best and worst.
-4. End with a short natural-language summary of the user’s trading strategy or risk level.
+# Your goal:
+# 1. Analyze the user's overall performance and trading behavior.
+# 2. Summarize each ticker separately:
+#    - Total buys vs. sells
+#    - Average buy/sell prices
+#    - Estimated profit or loss
+#    - Current holding status (if any shares remain)
+# 3. Identify which stock performed best and worst.
+# 4. End with a short natural-language summary of the user’s trading strategy or risk level.
 
-Format the response as:
-- A short paragraph summary per ticker.
-- A final paragraph summarizing the portfolio as a whole.
-"""
+# Format the response as:
+# - A short paragraph summary per ticker.
+# - A final paragraph summarizing the portfolio as a whole.
+# """
 
 
 
@@ -142,27 +142,27 @@ def portfolio_activity_summary() -> str:
 
 
 
-# ============================================================
-# 🧩 Tool 5 — Combine prompt + user data for LLM call
-# ============================================================
-@mcp.tool()
-def get_user_genral_view_on_portfolio() -> str:
-    """
-    1. Constructs the portfolio analysis prompt from Tool 4.
-    2. Reads the user'sx stock exchange data from Tool 2.
-    3. Returns a full prompt ready to send to an LLM for analysis.
-    """
-    logging.info("TOOL 'GET_USER_GENERAL_VIEW_ON_PORTFOLIO' IS NOW IN USE")
-    # Step 1: Get the prompt template
-    prompt_template = generate_portfolio_analysis_prompt()
+# # ============================================================
+# # 🧩 Tool 5 — Combine prompt + user data for LLM call
+# # ============================================================
+# @mcp.tool()
+# def get_user_genral_view_on_portfolio() -> str:
+#     """
+#     1. Constructs the portfolio analysis prompt from Tool 4.
+#     2. Reads the user'sx stock exchange data from Tool 2.
+#     3. Returns a full prompt ready to send to an LLM for analysis.
+#     """
+#     logging.info("TOOL 'GET_USER_GENERAL_VIEW_ON_PORTFOLIO' IS NOW IN USE")
+#     # Step 1: Get the prompt template
+#     prompt_template = generate_portfolio_analysis_prompt()
     
-    # Step 2: Read CSV data
-    portfolio_csv = read_user_exchanges_data()
+#     # Step 2: Read CSV data
+#     portfolio_csv = read_user_exchanges_data()
     
-    # Step 3: Combine prompt + data
-    full_prompt = f"{prompt_template}\n\nHere is the user's portfolio data:\n{portfolio_csv}"
+#     # Step 3: Combine prompt + data
+#     full_prompt = f"{prompt_template}\n\nHere is the user's portfolio data:\n{portfolio_csv}"
     
-    return full_prompt
+#     return full_prompt
 
 
 
