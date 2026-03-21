@@ -1,6 +1,7 @@
 import os
 import sys
 from anyio import Path
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 from typing import List
 import logging
@@ -16,12 +17,12 @@ from general.constans import STOCK_TRADES_CSV_FILE_PATH
 
 
 
-# Configure logging with timestamp and professional format
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
+    format="%(asctime)s %(name)s [%(levelname)s] %(message)s",
+    datefmt="%H:%M:%S",
 )
+logger = logging.getLogger(__name__)
 
 
 def load_prompt(name: str) -> str:
@@ -49,14 +50,34 @@ def get_stock_value(stock: StockInfoByDate) -> List[dict]:
 
     Returns:
         List[dict]: A list of dictionaries representing the stock's daily information.
+
+    IMPORTANT: Call this tool ONCE per stock with a single wide date range (e.g. 30–90 days).
+    Do NOT call it multiple times for the same stock with smaller ranges — use one call that
+    covers the full period you need.
     """
-    logging.info(f"TOOL 'GET_STOCK_VALUE' IS NOW IN USE with parameters: {stock.symbol} {stock.from_date} {stock.to_date}")
-    res = polygon_client.get_stock_daily_data(
-        symbol=stock.symbol,
-        from_date=stock.from_date,
-        to_date=stock.to_date
-    )
-    return res
+    logger.info(f"[TOOL] get_stock_value | {stock.symbol} {stock.from_date} → {stock.to_date}")
+    try:
+        raw = polygon_client.get_stock_daily_data(
+            symbol=stock.symbol,
+            from_date=stock.from_date,
+            to_date=stock.to_date
+        )
+        res = [
+            {
+                "date": datetime.fromtimestamp(r["timestamp"] / 1000, tz=timezone.utc).strftime("%Y-%m-%d"),
+                "close": r.get("close"),
+                "open": r.get("open"),
+                "high": r.get("high"),
+                "low": r.get("low"),
+                "volume": r.get("volume"),
+            }
+            for r in raw
+        ]
+        logger.info(f"[TOOL] get_stock_value | {stock.symbol} → {len(res)} records")
+        return res
+    except Exception as e:
+        logger.warning(f"[TOOL] get_stock_value | {stock.symbol} error: {e}")
+        return f"Error fetching data for {stock.symbol}: {e}"
 
 
 # ============================================================
@@ -73,12 +94,15 @@ def read_user_exchanges_data() -> str:
              "no records were found in stock_trades file".
              If an error occurs, returns the exception message.
     """
-    logging.info("TOOL 'READ_USER_EXCHANGES_DATA' IS NOW IN USE")
+    logger.info("[TOOL] read_user_exchanges_data | reading CSV")
     try:
         with open(STOCK_TRADES_CSV_FILE_PATH, "r") as f:
             text = f.read()
+            lines = len(text.strip().splitlines()) - 1 if text.strip() else 0  # subtract header
+            logger.info(f"[TOOL] read_user_exchanges_data | {lines} trade records found")
             return text if text else "no records were found in stock_trades file"
     except Exception as e:
+        logger.warning(f"[TOOL] read_user_exchanges_data | error: {e}")
         return f"An error occurred: {e}"
 
 
@@ -97,9 +121,14 @@ def get_last_closing_stock_price(stock: StockBase) -> List[float]:
     Returns:
         List[float]: The last closing price wrapped in a list (e.g. [220.15]).
     """
-    logging.info("TOOL 'GET_LAST_CLOSING_STOCK_PRICE' IS NOW IN USE")
-    res = polygon_client.get_stock_last_close_price(stock.symbol)
-    return res
+    logger.info(f"[TOOL] get_last_closing_stock_price | {stock.symbol}")
+    try:
+        res = polygon_client.get_stock_last_close_price(stock.symbol)
+        logger.info(f"[TOOL] get_last_closing_stock_price | {stock.symbol} → {res}")
+        return res
+    except Exception as e:
+        logger.warning(f"[TOOL] get_last_closing_stock_price | {stock.symbol} error: {e}")
+        return f"Error fetching price for {stock.symbol}: {e}"
 
 
 # # ============================================================

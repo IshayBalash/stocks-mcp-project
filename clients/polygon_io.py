@@ -5,6 +5,8 @@ from collections import deque
 from datetime import datetime, timedelta
 import time
 
+logger = logging.getLogger(__name__)
+
 #### something something like rate limiting can be implemented here ###
 
 
@@ -55,7 +57,7 @@ class PolygonIo:
             if self.counter_call<5:
                 self.counter_call+=1
             else:
-                logging.info(f"reached max API calls,sleeping for {(self.time_window-diff_seconds)+5}")
+                logger.warning(f"[RATE LIMIT] max API calls reached, sleeping {(self.time_window-diff_seconds)+5:.0f}s")
                 time.sleep((self.time_window-diff_seconds)+5)
                 self.counter_call=1
                 self.call_timestamps=datetime.now().isoformat(timespec='seconds')
@@ -86,7 +88,7 @@ class PolygonIo:
             raise ValueError("Symbol cannot be empty")
 
         self._wait_if_needed() 
-        logging.info(f"Fetching daily data for {symbol} from {from_date} to {to_date}")
+        logger.info(f"[API] get_aggs | {symbol} {from_date} → {to_date}")
         
         try:
             aggs = self.client.get_aggs(
