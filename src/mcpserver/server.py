@@ -1,6 +1,6 @@
 import os
 import sys
-from anyio import Path
+from pathlib import Path
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 from typing import List
@@ -10,11 +10,9 @@ from mcp.server.fastmcp import FastMCP
 # Add project root to Python path to find the clients module
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 from clients.polygon_io import PolygonIo
-from general.utils.argument_clases.stocks_clases import StockBase,StockInfoByDate
+from clients.finnhub_client import FinnhubClient
+from general.utils.argument_clases.stocks_clases import StockBase, StockInfoByDate
 from general.constans import STOCK_TRADES_CSV_FILE_PATH
-
-
-
 
 
 logging.basicConfig(
@@ -29,31 +27,73 @@ def load_prompt(name: str) -> str:
     return (Path(__file__).parent / "promts" / f"{name}.md").read_text()
 
 
-
 load_dotenv()
 polygon_client = PolygonIo(os.getenv("POLYGON_API_KEY"))
+finnhub_client = FinnhubClient(os.getenv("FINNHUB_API_KEY"))
 mcp = FastMCP("Stock Get Info")
 
+
 # ============================================================
-# 🧩 Tool 1 — Get stock data for a specific date range
+# Tool 1 — Read the user's personal trade history (CSV)
+# ============================================================
+@mcp.tool()
+def read_user_exchanges_data() -> str:
+    """
+    Read the user's personal stock trade history from a local CSV file.
+
+    Use this whenever the user asks about their own portfolio, holdings, transactions,
+    or performance — before doing any portfolio analysis or calculation.
+
+    The CSV columns are: ticker, date, action (buy/sell), stock_amount, closing_day_stock_price.
+
+    Returns:
+        str: Raw CSV content, or a message if the file is empty or unreadable.
+    """
+    logger.info("[TOOL] read_user_exchanges_data | reading CSV")
+    try:
+        with open(STOCK_TRADES_CSV_FILE_PATH, "r") as f:
+            text = f.read()
+            lines = len(text.strip().splitlines()) - 1 if text.strip() else 0
+            logger.info(f"[TOOL] read_user_exchanges_data | {lines} trade records found")
+            return text if text else "no records were found in stock_trades file"
+    except Exception as e:
+        logger.warning(f"[TOOL] read_user_exchanges_data | error: {e}")
+        return f"An error occurred: {e}"
+
+
+# ============================================================
+# Prompt — Portfolio activity summary
+# ============================================================
+@mcp.prompt()
+def portfolio_activity_summary() -> str:
+    """Guides the model to analyze and summarize the user's portfolio performance."""
+    return load_prompt("portfolio_activity_summary")
+
+
+# ============================================================
+# Tool 2 — Historical daily price data for a date range (Polygon)
 # ============================================================
 @mcp.tool()
 def get_stock_value(stock: StockInfoByDate) -> List[dict]:
     """
-    Retrieve daily stock data from Polygon.io for a given symbol and date range.
+    Retrieve historical daily price data (open, high, low, close, volume) for a stock symbol over a date range.
+
+    Use this when the user asks about price history, trends, performance over time,
+    or needs data to compare across multiple dates (e.g. "how did AAPL do last month?").
+    Do NOT use this just to get the current price — use get_last_closing_stock_price instead.
 
     Args:
-        stock (StockInfoByDate): A validated Pydantic model containing:
+        stock (StockInfoByDate):
             - symbol (str): Stock ticker (e.g. 'AAPL')
             - from_date (date): Start date in YYYY-MM-DD format
             - to_date (date): End date in YYYY-MM-DD format
 
     Returns:
-        List[dict]: A list of dictionaries representing the stock's daily information.
+        List[dict]: One entry per trading day, each with:
+            date, open, high, low, close, volume
 
-    IMPORTANT: Call this tool ONCE per stock with a single wide date range (e.g. 30–90 days).
-    Do NOT call it multiple times for the same stock with smaller ranges — use one call that
-    covers the full period you need.
+    IMPORTANT: Call this tool ONCE per stock with a single wide date range.
+    Do NOT call it multiple times with smaller ranges for the same stock.
     """
     logger.info(f"[TOOL] get_stock_value | {stock.symbol} {stock.from_date} → {stock.to_date}")
     try:
@@ -81,45 +121,22 @@ def get_stock_value(stock: StockInfoByDate) -> List[dict]:
 
 
 # ============================================================
-# 🧩 Tool 2 — Read local user exchange data
-# ============================================================
-@mcp.tool()
-def read_user_exchanges_data() -> str:
-    """
-    Reads the user stock exchange transaction data from a local CSV file.
-
-    Returns:
-        str: The raw contents of the CSV file.
-             If the file is empty, returns a message:
-             "no records were found in stock_trades file".
-             If an error occurs, returns the exception message.
-    """
-    logger.info("[TOOL] read_user_exchanges_data | reading CSV")
-    try:
-        with open(STOCK_TRADES_CSV_FILE_PATH, "r") as f:
-            text = f.read()
-            lines = len(text.strip().splitlines()) - 1 if text.strip() else 0  # subtract header
-            logger.info(f"[TOOL] read_user_exchanges_data | {lines} trade records found")
-            return text if text else "no records were found in stock_trades file"
-    except Exception as e:
-        logger.warning(f"[TOOL] read_user_exchanges_data | error: {e}")
-        return f"An error occurred: {e}"
-
-
-# ============================================================
-# 🧩 Tool 3 — Get last closing stock price
+# Tool 3 — Last closing price for a symbol (Polygon)
 # ============================================================
 @mcp.tool()
 def get_last_closing_stock_price(stock: StockBase) -> List[float]:
     """
-    Returns the last recorded closing price for a given stock symbol using Polygon.io.
+    Get the most recent closing price for a stock symbol.
+
+    Use this for quick, single-price lookups (e.g. "what is TSLA trading at?").
+    For price history over a date range, use get_stock_value instead.
 
     Args:
-        stock (StockBase): A validated Pydantic model containing:
+        stock (StockBase):
             - symbol (str): Stock ticker (e.g. 'AAPL')
 
     Returns:
-        List[float]: The last closing price wrapped in a list (e.g. [220.15]).
+        List[float]: The last closing price, e.g. [220.15].
     """
     logger.info(f"[TOOL] get_last_closing_stock_price | {stock.symbol}")
     try:
@@ -131,70 +148,93 @@ def get_last_closing_stock_price(stock: StockBase) -> List[float]:
         return f"Error fetching price for {stock.symbol}: {e}"
 
 
-# # ============================================================
-# # 🧩 Tool 4 — Generate best user stock exgae promtes
-# # ============================================================
-# @mcp.prompt()
-# def generate_portfolio_analysis_prompt () -> str:
-#     """
-#     Return a formatted prompt for summarizing the user's stock portfolio.
-#     """
-#     return """
-# You are a professional financial analysis assistant.
+# ============================================================
+# Tool 4 — Company profile (Finnhub)
+# ============================================================
+@mcp.tool()
+def get_company_profile(stock: StockBase) -> dict:
+    """
+    Get company profile information for a stock symbol.
 
-# The user will provide a CSV file representing their recent portfolio actions.
-# Each row in the CSV contains:
-# ticker, date, action, stock_amount, closing_day_stock_price
+    Use this when the user asks what a company does, what sector/industry it's in,
+    its market cap, exchange, website, or country of origin.
 
-# Your goal:
-# 1. Analyze the user's overall performance and trading behavior.
-# 2. Summarize each ticker separately:
-#    - Total buys vs. sells
-#    - Average buy/sell prices
-#    - Estimated profit or loss
-#    - Current holding status (if any shares remain)
-# 3. Identify which stock performed best and worst.
-# 4. End with a short natural-language summary of the user’s trading strategy or risk level.
+    Args:
+        stock (StockBase):
+            - symbol (str): Stock ticker (e.g. 'AAPL')
 
-# Format the response as:
-# - A short paragraph summary per ticker.
-# - A final paragraph summarizing the portfolio as a whole.
-# """
+    Returns:
+        dict: Company name, exchange, industry, market cap, country, website.
+    """
+    logger.info(f"[TOOL] get_company_profile | {stock.symbol}")
+    try:
+        result = finnhub_client.get_company_profile(stock.symbol)
+        result.pop("logo", None)
+        logger.info(f"[TOOL] get_company_profile | {stock.symbol} → ok")
+        return result
+    except Exception as e:
+        logger.warning(f"[TOOL] get_company_profile | {stock.symbol} error: {e}")
+        return {"error": str(e)}
 
 
+# ============================================================
+# Tool 5 — Recent company news (Finnhub)
+# ============================================================
+@mcp.tool()
+def get_company_news(stock: StockInfoByDate) -> list:
+    """
+    Get recent news articles for a company over a date range.
+
+    Use this when the user asks about recent news, events, sentiment, or anything
+    that may have affected a stock recently (e.g. "what's been happening with NVDA?").
+
+    Args:
+        stock (StockInfoByDate):
+            - symbol (str): Stock ticker (e.g. 'AAPL')
+            - from_date (date): Start date in YYYY-MM-DD format
+            - to_date (date): End date in YYYY-MM-DD format
+
+    Returns:
+        list[dict]: News articles, each with: headline, summary, source, url, datetime.
+    """
+    logger.info(f"[TOOL] get_company_news | {stock.symbol} {stock.from_date} → {stock.to_date}")
+    try:
+        result = finnhub_client.get_company_news(
+            stock.symbol,
+            str(stock.from_date),
+            str(stock.to_date),
+        )
+        logger.info(f"[TOOL] get_company_news | {stock.symbol} → {len(result)} articles")
+        return result
+    except Exception as e:
+        logger.warning(f"[TOOL] get_company_news | {stock.symbol} error: {e}")
+        return [{"error": str(e)}]
 
 
-@mcp.prompt()
-def portfolio_activity_summary() -> str:
-    """Guides the model to analyze and summarize the user's portfolio performance"""
-    return load_prompt("portfolio_activity_summary")
+# ============================================================
+# Tool 6 — Key financial metrics (Finnhub)
+# ============================================================
+@mcp.tool()
+def get_basic_financials(stock: StockBase) -> dict:
+    """
+    Get fundamental financial metrics for a stock symbol.
 
+    Use this when the user asks about valuation (P/E, EPS), risk (beta),
+    dividend yield, 52-week high/low, or other key financial ratios.
+    Do NOT use this for price history — use get_stock_value for that.
 
+    Args:
+        stock (StockBase):
+            - symbol (str): Stock ticker (e.g. 'AAPL')
 
-# # ============================================================
-# # 🧩 Tool 5 — Combine prompt + user data for LLM call
-# # ============================================================
-# @mcp.tool()
-# def get_user_genral_view_on_portfolio() -> str:
-#     """
-#     1. Constructs the portfolio analysis prompt from Tool 4.
-#     2. Reads the user'sx stock exchange data from Tool 2.
-#     3. Returns a full prompt ready to send to an LLM for analysis.
-#     """
-#     logging.info("TOOL 'GET_USER_GENERAL_VIEW_ON_PORTFOLIO' IS NOW IN USE")
-#     # Step 1: Get the prompt template
-#     prompt_template = generate_portfolio_analysis_prompt()
-    
-#     # Step 2: Read CSV data
-#     portfolio_csv = read_user_exchanges_data()
-    
-#     # Step 3: Combine prompt + data
-#     full_prompt = f"{prompt_template}\n\nHere is the user's portfolio data:\n{portfolio_csv}"
-    
-#     return full_prompt
-
-
-
-
-
-
+    Returns:
+        dict: Metrics including P/E ratio, EPS, 52-week high/low, beta, dividend yield, and more.
+    """
+    logger.info(f"[TOOL] get_basic_financials | {stock.symbol}")
+    try:
+        result = finnhub_client.get_basic_financials(stock.symbol)
+        logger.info(f"[TOOL] get_basic_financials | {stock.symbol} → {len(result)} metrics")
+        return result
+    except Exception as e:
+        logger.warning(f"[TOOL] get_basic_financials | {stock.symbol} error: {e}")
+        return {"error": str(e)}
